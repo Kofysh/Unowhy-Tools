@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -50,7 +50,7 @@ public partial class Dashboard : INavigableView<DashboardViewModel>
 
         lababout2.Text = ver;
 
-        applylang();
+        await applylang();
         pcname.Text = UT.GetLine(UTdata.HostName, 1);
 
         if (await UT.CheckInternet())
@@ -62,7 +62,6 @@ public partial class Dashboard : INavigableView<DashboardViewModel>
                 {
                     Color white = (Color)ColorConverter.ConvertFromString("#FFFFFF");
                     Color gray = (Color)ColorConverter.ConvertFromString("#bebebe");
-                    var web = new HttpClient();
                     string newver = await UT.OnlineDatas.GetUpdates("utnewver");
                     newver = newver.Insert(2, ".");
                     newver = newver.Replace("\n", "");

@@ -1,4 +1,4 @@
-﻿using Microsoft.Web.WebView2.Wpf;
+using Microsoft.Web.WebView2.Wpf;
 using Microsoft.Win32.TaskScheduler;
 using System;
 using System.Diagnostics;
@@ -169,7 +169,6 @@ public partial class Updater : INavigableView<DashboardViewModel>
         if (await UT.version.newver())
         {
             labimg.Source = UT.GetImgSource("yes.png");
-            var web = new HttpClient();
             string newver = await UT.OnlineDatas.GetUpdates("utnewver");
             newver = newver.Insert(2, ".");
             newver = newver.Replace("\n", "");
@@ -183,7 +182,6 @@ public partial class Updater : INavigableView<DashboardViewModel>
         else if (UT.version.isdeb())
         {
             labimg.Source = UT.GetImgSource("yes.png");
-            var web = new HttpClient();
             string newver = await UT.OnlineDatas.GetUpdates("utnewver");
             newver = newver.Insert(2, ".");
             newver = newver.Replace("\n", "");

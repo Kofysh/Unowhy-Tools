@@ -1,4 +1,4 @@
-﻿/*
+/*
             
             
               ."I!ii>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>ii!I".
@@ -120,6 +120,7 @@ using Microsoft.Win32;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -152,6 +153,10 @@ namespace Unowhy_Tools
 {
     public partial class UT
     {
+        private static readonly HttpClient _httpClient = new HttpClient();
+        private static readonly ConcurrentDictionary<string, string> _wmiCache = new ConcurrentDictionary<string, string>(StringComparer.Ordinal);
+        private static readonly ConcurrentDictionary<string, BitmapImage> _resourceImageCache = new ConcurrentDictionary<string, BitmapImage>(StringComparer.OrdinalIgnoreCase);
+
         #region DLL
         [DllImport("DwmApi")]
         private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, int[] attrValue, int attrSize);
@@ -229,7 +234,6 @@ namespace Unowhy_Tools
 
             public static async Task<bool> newver()
             {
-                var web = new HttpClient();
                 string newver = await UT.OnlineDatas.GetUpdates("utnewver");
                 int newverint = Convert.ToInt32(newver);
                 if (verfull < newverint)
@@ -982,25 +986,25 @@ namespace Unowhy_Tools
             }
         }
 
-        public static async Task DeployDABack()
+        public static Task DeployDABack()
         {
             var mainWindow = System.Windows.Application.Current.MainWindow as Unowhy_Tools_WPF.Views.MainWindow;
-            mainWindow.DeployDABack();
+            return mainWindow.DeployDABack();
         }
 
-        public static async Task DeployBack(Type type, Grid grid, Border border)
+        public static Task DeployBack(Type type, Grid grid, Border border)
         {
             var mainWindow = System.Windows.Application.Current.MainWindow as Unowhy_Tools_WPF.Views.MainWindow;
-            mainWindow.DeployBack(type, grid, border);
+            return mainWindow.DeployBack(type, grid, border);
         }
 
-        public static async Task UnDeployBack()
+        public static Task UnDeployBack()
         {
             var mainWindow = System.Windows.Application.Current.MainWindow as Unowhy_Tools_WPF.Views.MainWindow;
-            mainWindow.UnDeployBack();
+            return mainWindow.UnDeployBack();
         }
 
-        public static async void NavigateTo(Type page)
+        public static void NavigateTo(Type page)
         {
             var mainWindow = System.Windows.Application.Current.MainWindow as Unowhy_Tools_WPF.Views.MainWindow;
             mainWindow.Navigate(page);
@@ -4106,6 +4110,12 @@ namespace Unowhy_Tools
 
         public static string GetWMI(string classname, string propertyname)
         {
+            string cacheKey = classname + "|" + propertyname;
+            if (_wmiCache.TryGetValue(cacheKey, out var cached))
+            {
+                return cached;
+            }
+
             Write2Log("Get WMI: " + classname + " | " + propertyname);
 
             try
@@ -4114,15 +4124,19 @@ namespace Unowhy_Tools
                 ManagementObjectCollection result = searcher.Get();
                 foreach (ManagementObject obj in result)
                 {
-                    Write2Log("Get WMI done: " + obj[propertyname]?.ToString());
-                    return obj[propertyname]?.ToString();
+                    string value = obj[propertyname]?.ToString() ?? "null";
+                    Write2Log("Get WMI done: " + value);
+                    _wmiCache.TryAdd(cacheKey, value);
+                    return value;
                 }
                 Write2Log("Get WMI fail");
+                _wmiCache.TryAdd(cacheKey, "null");
                 return "null";
             }
             catch
             {
                 Write2Log("Get WMI fail");
+                _wmiCache.TryAdd(cacheKey, "null");
                 return "null";
             }
         }
@@ -4130,8 +4144,7 @@ namespace Unowhy_Tools
         public static async Task DlFilewithProgress(string url, string path, IProgress<double> progress, CancellationToken token)
         {
             Write2Log("Downloading file: From \"" + url + "\" to \"" + path + "\"");
-            HttpClient client = new HttpClient();
-            var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, token);
+            using var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, token);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -4144,8 +4157,8 @@ namespace Unowhy_Tools
             int updateInterval = 100;
             DateTime lastUpdate = DateTime.Now;
 
-            using (Stream stream = await response.Content.ReadAsStreamAsync())
-            using (FileStream fileStream = new FileStream(path, FileMode.Create, FileAccess.Write))
+            await using (Stream stream = await response.Content.ReadAsStreamAsync(token))
+            await using (FileStream fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
             {
                 byte[] buffer = new byte[1024*1024];
                 int bytesRead;
@@ -4186,8 +4199,16 @@ namespace Unowhy_Tools
 
         public static BitmapImage GetImgSource(string resname)
         {
-            BitmapImage bmp = new BitmapImage(new System.Uri("pack://application:,,,/Resources/" + resname));
-            return bmp;
+            return _resourceImageCache.GetOrAdd(resname, static key =>
+            {
+                var bmp = new BitmapImage();
+                bmp.BeginInit();
+                bmp.CacheOption = BitmapCacheOption.OnLoad;
+                bmp.UriSource = new Uri("pack://application:,,,/Resources/" + key);
+                bmp.EndInit();
+                bmp.Freeze();
+                return bmp;
+            });
         }
 
         public static ImageSource GetImageSourceFromExe(string path)

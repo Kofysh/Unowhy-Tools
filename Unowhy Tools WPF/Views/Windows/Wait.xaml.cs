@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -16,12 +16,12 @@ namespace Unowhy_Tools_WPF.Views.Windows
         {
             InitializeComponent();
 
-            applylang();
+            Loaded += async (_, __) => await ApplyLangAsync();
 
             Visibility = Visibility.Collapsed;
         }
 
-        public async void applylang()
+        public async Task ApplyLangAsync()
         {
             try
             {
@@ -33,7 +33,7 @@ namespace Unowhy_Tools_WPF.Views.Windows
 
         public bool IsOpen = false;
 
-        public async Task Show(string title, string img)
+        public Task Show(string title, string img)
         {
             if (IsOpen)
             {
@@ -93,9 +93,11 @@ namespace Unowhy_Tools_WPF.Views.Windows
 
                 storyboard.Begin();
             }
+
+            return Task.CompletedTask;
         }
 
-        public async Task Hide()
+        public Task Hide()
         {
             IsOpen = false;
             var fadeInAnimation2 = new DoubleAnimation
@@ -138,6 +140,8 @@ namespace Unowhy_Tools_WPF.Views.Windows
             storyboard.Completed += RealHide;
 
             storyboard.Begin();
+
+            return Task.CompletedTask;
         }
 
         public void RealHide(object sender, EventArgs e)

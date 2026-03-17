@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -70,7 +70,7 @@ public partial class MainWindow : INavigationWindow
 
         SnackBarService = _snackbarService;
 
-        applylang();
+        Loaded += async (_, __) => await applylang();
         this.KeyDown += MainWindow_KonamiKeyDown;
         this.KeyUp += MainWindow_KonamiKeyUp;
     }

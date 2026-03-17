@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -33,8 +33,8 @@ public partial class About : INavigableView<DashboardViewModel>
 
     public async void GoUpdater(object sender, RoutedEventArgs e)
     {
-        UT.anim.RegisterParent(RootGrid, RootBorder);
-        UT.anim.AnimParent("zoomout2");
+        await UT.anim.RegisterParent(RootGrid, RootBorder);
+        await UT.anim.AnimParent("zoomout2");
         await Task.Delay(500);
         UT.NavigateTo(typeof(Updater));
     }

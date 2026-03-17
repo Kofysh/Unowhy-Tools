@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
@@ -39,7 +39,7 @@ public partial class AddUser : INavigableView<DashboardViewModel>
         }
 
         await UT.DeployBack(typeof(Customize), RootGrid, RootBorder);
-        UT.anim.BorderZoomOut(RootBorder);
+        await UT.anim.BorderZoomOut(RootBorder);
 
         foreach (UIElement element in RootStack.Children)
         {

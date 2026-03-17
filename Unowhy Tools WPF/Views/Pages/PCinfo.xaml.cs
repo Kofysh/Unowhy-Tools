@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -18,6 +18,7 @@ namespace Unowhy_Tools_WPF.Views.Pages;
 public partial class PCinfo : INavigableView<DashboardViewModel>
 {
     UT.Data UTdata = new UT.Data();
+    private string _tempWallpaperPath;
 
     public DashboardViewModel ViewModel
     {
@@ -91,11 +92,24 @@ public partial class PCinfo : INavigableView<DashboardViewModel>
         {
             imgwv.Source = new BitmapImage(new System.Uri("pack://application:,,,/Resources/win10.png"));
         }
-        Random rand = new Random();
-        int random = rand.Next(0, 1000000);
-        File.Copy(Environment.GetEnvironmentVariable("USERPROFILE") + "\\AppData\\Roaming\\Microsoft\\Windows\\Themes\\TranscodedWallpaper", Environment.GetEnvironmentVariable("TEMP") + $"\\TranscodedWallpaper_{random}.jpg");
-        string curentbgpath = Environment.GetEnvironmentVariable("TEMP") + $"\\TranscodedWallpaper_{random}.jpg";
-        bgimg.Source = new BitmapImage(new System.Uri(curentbgpath));
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(_tempWallpaperPath) && File.Exists(_tempWallpaperPath))
+            {
+                File.Delete(_tempWallpaperPath);
+            }
+
+            string source = Environment.GetEnvironmentVariable("USERPROFILE") + "\\AppData\\Roaming\\Microsoft\\Windows\\Themes\\TranscodedWallpaper";
+            string dest = Path.Combine(Environment.GetEnvironmentVariable("TEMP") ?? Path.GetTempPath(), $"TranscodedWallpaper_{Guid.NewGuid():N}.jpg");
+            File.Copy(source, dest, true);
+            _tempWallpaperPath = dest;
+
+            bgimg.Source = new BitmapImage(new System.Uri(dest));
+        }
+        catch
+        {
+            // best-effort wallpaper; ignore failures
+        }
     }
 
     public async void InitAnim(object sender, RoutedEventArgs e)
@@ -112,7 +126,7 @@ public partial class PCinfo : INavigableView<DashboardViewModel>
         bgimg.Visibility = Visibility.Hidden;
 
         await UT.DeployBack(typeof(Dashboard), RootGrid, RootBorder);
-        UT.anim.BorderZoomOut(RootBorder);
+        await UT.anim.BorderZoomOut(RootBorder);
 
         await infoapply();
 

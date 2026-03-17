@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -23,6 +23,7 @@ namespace Unowhy_Tools_WPF.Views.Pages;
 public partial class Wifi : INavigableView<DashboardViewModel>
 {
     UT.Data UTdata = new UT.Data();
+    private static readonly HttpClient _http = new HttpClient();
 
     public DashboardViewModel ViewModel
     {
@@ -40,7 +41,7 @@ public partial class Wifi : INavigableView<DashboardViewModel>
 
     public async void Init(object sender, EventArgs e)
     {
-        applylang();
+        await applylang();
         string confserv = await UT.Config.Get("ConfServer");
         if (confserv == "idf")
         {
@@ -78,7 +79,7 @@ public partial class Wifi : INavigableView<DashboardViewModel>
         }
 
         await UT.DeployBack(typeof(Dashboard), RootGrid, RootBorder);
-        UT.anim.BorderZoomOut(RootBorder);
+        await UT.anim.BorderZoomOut(RootBorder);
 
         foreach (UIElement element in RootGrid2.Children)
         {
@@ -219,7 +220,6 @@ public partial class Wifi : INavigableView<DashboardViewModel>
                 await UT.waitstatus.open(await UT.GetLang("wait.get"), "clouddl.png");
                 await Task.Delay(1000);
 
-                var web = new HttpClient();
                 string sn = serial.Text;
                 string preurl = "null";
                 if (confserv_idf.IsSelected == true)
@@ -232,7 +232,7 @@ public partial class Wifi : INavigableView<DashboardViewModel>
                 }
                 string configurl = $"{preurl}/devices/{sn}/configuration";
 
-                HttpResponseMessage response = await web.GetAsync(configurl);
+                HttpResponseMessage response = await _http.GetAsync(configurl);
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     DoubleAnimation translateAnimation = new DoubleAnimation
@@ -248,7 +248,7 @@ public partial class Wifi : INavigableView<DashboardViewModel>
                     transform.BeginAnimation(TranslateTransform.XProperty, translateAnimation);
                     await Task.Delay(500);
 
-                    string g = await web.GetStringAsync(configurl);
+                    string g = await _http.GetStringAsync(configurl);
                     string jsonString = g;
                     List<dynamic> dataList = JsonConvert.DeserializeObject<List<dynamic>>(jsonString);
 
@@ -266,7 +266,7 @@ public partial class Wifi : INavigableView<DashboardViewModel>
 
                     foreach (var url in urlList)
                     {
-                        JObject json = JObject.Parse(await web.GetStringAsync(url));
+                        JObject json = JObject.Parse(await _http.GetStringAsync(url));
                         mergedJson.Merge(json);
                     }
 

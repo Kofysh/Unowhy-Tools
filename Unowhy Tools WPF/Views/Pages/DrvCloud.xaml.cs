@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -31,6 +31,8 @@ public partial class DrvCloud : INavigableView<DashboardViewModel>
     {
         get;
     }
+
+    private static readonly HttpClient _http = new HttpClient();
 
     public void GoForw(object sender, RoutedEventArgs e)
     {
@@ -314,11 +316,10 @@ public partial class DrvCloud : INavigableView<DashboardViewModel>
             SkeletonStack.Visibility = Visibility.Collapsed;
 
             string datasurl = UT.online_datas;
-            HttpClient web = new HttpClient();
-            HttpResponseMessage rep = await web.GetAsync(datasurl);
+            HttpResponseMessage rep = await _http.GetAsync(datasurl);
             if (rep.StatusCode == HttpStatusCode.OK)
             {
-                string jsonContent = await web.GetStringAsync(datasurl);
+                string jsonContent = await _http.GetStringAsync(datasurl);
                 dynamic jsonObject = JsonConvert.DeserializeObject(jsonContent);
                 if (jsonObject.drivers != null && jsonObject.drivers.Count > 0)
                 {

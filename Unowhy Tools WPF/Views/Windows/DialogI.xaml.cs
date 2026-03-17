@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Windows;
 using System.Windows.Media;
@@ -21,6 +21,7 @@ namespace Unowhy_Tools_WPF.Views.Windows
 
         private bool _hideRequest = false;
         private bool _result = false;
+        private DispatcherFrame _frame;
 
 
         public bool ShowDialog(string message, BitmapImage image)
@@ -89,19 +90,8 @@ namespace Unowhy_Tools_WPF.Views.Windows
             transform.BeginAnimation(TranslateTransform.YProperty, translateAnimation);
 
             _hideRequest = false;
-            while (!_hideRequest)
-            {
-                if (this.Dispatcher.HasShutdownStarted ||
-                    this.Dispatcher.HasShutdownFinished)
-                {
-                    break;
-                }
-
-                this.Dispatcher.Invoke(
-                    DispatcherPriority.Background,
-                    new ThreadStart(delegate { }));
-                Thread.Sleep(20);
-            }
+            _frame = new DispatcherFrame();
+            Dispatcher.PushFrame(_frame);
 
             return _result;
         }
@@ -154,6 +144,10 @@ namespace Unowhy_Tools_WPF.Views.Windows
         {
             Visibility = Visibility.Collapsed;
             _hideRequest = true;
+            if (_frame != null)
+            {
+                _frame.Continue = false;
+            }
         }
 
         private void OkButton_Click(object sender, RoutedEventArgs e)
